@@ -1,9 +1,8 @@
-mod renderer;
 mod app;
-
 mod input;
-mod core;
+mod rendering;
 
+use legion::{Resources, World};
 use winit::{
     event::*,
     event_loop::{ControlFlow, EventLoop},

@@ -1,13 +1,14 @@
-use legion::{World};
+use legion::{Resources, World};
 use wgpu::SurfaceError;
 use winit::event::WindowEvent;
 use winit::event_loop::ControlFlow;
 use winit::window::{Window, WindowId};
 use crate::input::Input;
-use crate::renderer::Renderer;
+use crate::rendering::renderer::Renderer;
 
 pub struct App {
-    world: World,
+    pub world: World,
+    pub resources: Resources,
     pub renderer: Renderer,
     input: Input,
 }
@@ -15,11 +16,13 @@ pub struct App {
 impl App {
     pub async fn new(window: Window) -> Self {
         let world = World::default();
-        let renderer = Renderer::new(window).await;
+        let resources = Resources::default();
+        let mut renderer = Renderer::new(window).await;
         let input = Input::new();
 
         return Self {
             world,
+            resources,
             renderer,
             input,
         };

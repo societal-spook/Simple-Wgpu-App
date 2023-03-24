@@ -1,6 +1,12 @@
+use legion::{Resources, Schedule, World};
+use wgpu::{CommandEncoder, Device, RenderPass, RenderPipeline, TextureView};
 use winit::window::Window;
+use crate::rendering::model::Model;
+use crate::rendering::scene::Scene;
 
-pub(crate) struct Core {
+pub struct Renderer {
+    scene: Scene,
+    pub(crate) window: Window,
     surface: wgpu::Surface,
     device: wgpu::Device,
     queue: wgpu::Queue,
@@ -8,8 +14,8 @@ pub(crate) struct Core {
     size: winit::dpi::PhysicalSize<u32>,
 }
 
-impl Core {
-    pub(crate) async fn new(window: &Window) -> Self {
+impl Renderer {
+    pub async fn new(window: Window) -> Self {
         let size = window.inner_size();
 
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
@@ -51,9 +57,15 @@ impl Core {
             alpha_mode: surface_caps.alpha_modes[0],
             view_formats: vec![],
         };
+
         surface.configure(&device, &config);
 
+        let mut scene = Scene::new(&device, &config);
+        scene.add_default_content(&device, &queue);
+
         Self {
+            scene,
+            window,
             surface,
             device,
             queue,
@@ -62,31 +74,18 @@ impl Core {
         }
     }
 
-    pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
+    pub fn window(&self) -> &Window {
+        &self.window
+    }
+
+    pub fn render(&self, world: &World) -> Result<(), wgpu::SurfaceError> {
         let output = self.surface.get_current_texture()?;
         let view = output.texture.create_view(&wgpu::TextureViewDescriptor::default());
         let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
             label: Some("Render Encoder"),
         });
-        {
-            let _render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                label: Some("Render Pass"),
-                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                    view: &view,
-                    resolve_target: None,
-                    ops: wgpu::Operations {
-                        load: wgpu::LoadOp::Clear(wgpu::Color {
-                            r: 0.1,
-                            g: 0.2,
-                            b: 0.3,
-                            a: 1.0,
-                        }),
-                        store: true,
-                    },
-                })],
-                depth_stencil_attachment: None,
-            });
-        }
+
+        self.scene.draw(&mut encoder, &view);
 
         self.queue.submit(std::iter::once(encoder.finish()));
         output.present();
