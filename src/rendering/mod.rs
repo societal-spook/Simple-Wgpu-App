@@ -10,6 +10,7 @@ pub mod pipeline;
 mod scene;
 pub mod renderer;
 mod texture;
+mod camera;
 
 
 const VERTICES: &[Vertex] = &[
@@ -50,9 +51,10 @@ impl Model for Shape {
         let diffuse_bytes = include_bytes!("../data/happy-tree.png");
         let diffuse_texture = Texture::from_bytes(&device, &queue, diffuse_bytes, "happy-tree.png").unwrap();
 
+        let (texture_bind_group_layout, _) = pipeline.get_layouts();
         let diffuse_bind_group = device.create_bind_group(
             &wgpu::BindGroupDescriptor {
-                layout: pipeline.get_layouts(),
+                layout: texture_bind_group_layout,
                 entries: &[
                     wgpu::BindGroupEntry {
                         binding: 0,

@@ -3,12 +3,14 @@ use crate::rendering::model::Vertex;
 
 pub trait Pipeline {
     fn create_pipeline(device: &Device, config: &SurfaceConfiguration) -> Self;
-    fn get_layouts(&self) -> &BindGroupLayout;
+    fn get_layouts(&self) -> (&BindGroupLayout, &BindGroupLayout);
+    fn get_camera_layout(&self) -> &BindGroupLayout;
 }
 
 pub struct DefaultPipeline {
     pub pipeline: RenderPipeline,
     texture_bind_group_layout: BindGroupLayout,
+    camera_bind_group_layout: BindGroupLayout,
 }
 
 impl Pipeline for DefaultPipeline {
@@ -36,10 +38,26 @@ impl Pipeline for DefaultPipeline {
                 label: Some("texture_bind_group_layout"),
             });
 
+        let camera_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            entries: &[
+                wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStages::VERTEX,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
+                }
+            ],
+            label: Some("camera_bind_group_layout"),
+        });
+
         let render_pipeline_layout =
             device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                 label: Some("Render Pipeline Layout"),
-                bind_group_layouts: &[&texture_bind_group_layout],
+                bind_group_layouts: &[&texture_bind_group_layout, &camera_bind_group_layout],
                 push_constant_ranges: &[],
             });
 
@@ -88,10 +106,14 @@ impl Pipeline for DefaultPipeline {
             multiview: None,
         });
 
-        Self { pipeline, texture_bind_group_layout }
+        Self { pipeline, texture_bind_group_layout, camera_bind_group_layout }
     }
 
-    fn get_layouts(&self) -> &BindGroupLayout {
-        return &self.texture_bind_group_layout;
+    fn get_layouts(&self) -> (&BindGroupLayout, &BindGroupLayout) {
+        return (&self.texture_bind_group_layout, &self.camera_bind_group_layout);
+    }
+
+    fn get_camera_layout(&self) -> &BindGroupLayout{
+        return  &self.camera_bind_group_layout;
     }
 }

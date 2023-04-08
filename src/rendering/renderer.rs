@@ -60,7 +60,7 @@ impl Renderer {
 
         surface.configure(&device, &config);
 
-        let mut scene = Scene::new(&device, &config);
+        let mut scene = Scene::new(&device, &config, &size);
         scene.add_default_content(&device, &queue);
 
         Self {
@@ -78,14 +78,14 @@ impl Renderer {
         &self.window
     }
 
-    pub fn render(&self, world: &World) -> Result<(), wgpu::SurfaceError> {
+    pub fn render(&mut self, resources: &Resources, world: &World) -> Result<(), wgpu::SurfaceError> {
         let output = self.surface.get_current_texture()?;
         let view = output.texture.create_view(&wgpu::TextureViewDescriptor::default());
         let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
             label: Some("Render Encoder"),
         });
 
-        self.scene.draw(&mut encoder, &view);
+        self.scene.draw(&self.queue, &mut encoder, &view, resources, world);
 
         self.queue.submit(std::iter::once(encoder.finish()));
         output.present();

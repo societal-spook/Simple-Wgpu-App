@@ -1,6 +1,7 @@
 mod app;
 mod input;
 mod rendering;
+mod camera;
 
 use legion::{Resources, World};
 use winit::{
@@ -42,4 +43,3 @@ pub async fn run() {
         }
     })
 }
-
